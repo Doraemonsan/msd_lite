@@ -6,7 +6,6 @@ env:
   BUILD_TYPE: Release
   BINARY_PATH: src/msd_lite
   CONFIG_PATH: conf/msd_lite.conf
-  ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
   RELEASE_NAME: msd_lite
 
 jobs:
@@ -48,15 +47,14 @@ jobs:
       shell: bash
       run: |
         # 创建 artifacts 目录
-        mkdir -p ${{github.workspace}}/${{ env.ARTIFACTS_DIR }}
+        mkdir -p ./artifacts
 
         # 复制二进制文件和配置文件到 artifacts 目录
-        cp ${{github.workspace}}/${{ env.BINARY_PATH }} ${{github.workspace}}/${{ env.ARTIFACTS_DIR }}
-        cp ${{github.workspace}}/${{ env.CONFIG_PATH }} ${{github.workspace}}/${{ env.ARTIFACTS_DIR }}
+        cp ./${{ env.BINARY_PATH }} ./artifacts/
+        cp ./${{ env.CONFIG_PATH }} ./artifacts/
 
         # 打包成 zip 文件
-        cd ${{github.workspace}}
-        tar -czf ${{github.workspace}}/msd_lite_amd64.tar.gz ${{github.workspace}}/${{ env.ARTIFACTS_DIR }}/*
+        tar -czf ./msd_lite_amd64.tar.gz ./artifacts/*
 
     # 构建 Docker 镜像
     - name: Build Docker Image
@@ -68,10 +66,10 @@ jobs:
         RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
         # 将二进制文件复制到 /usr/local/bin
-        COPY artifacts/msd_lite /usr/local/bin/
+        COPY ./artifacts/msd_lite /usr/local/bin/
         
         # 将配置文件复制到 /etc
-        COPY artifacts/msd_lite.conf /etc/
+        COPY ./artifacts/msd_lite.conf /etc/
         
         # 设置容器启动命令
         CMD ["/usr/local/bin/msd_lite", "-v", "-c", "/etc/msd_lite.conf"]
@@ -81,7 +79,7 @@ jobs:
         docker build -t ${{ env.RELEASE_NAME }} .
 
         # 保存镜像为 tar 文件
-        docker save -o ${{github.workspace}}/msd_lite_container_amd64.tar ${{ env.RELEASE_NAME }}
+        docker save -o ./msd_lite_container_amd64.tar ${{ env.RELEASE_NAME }}
 
     - name: 创建 Release
       id: create_release
@@ -103,7 +101,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{github.workspace}}/msd_lite_amd64.tar.gz
+        asset_path: ./msd_lite_amd64.tar.gz
         asset_name: msd_lite_amd64.tar.gz
         asset_content_type: application/tar
 
@@ -115,6 +113,6 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ${{github.workspace}}/msd_lite_container_amd64.tar
-        asset_name: msd_lite_container_amd64.tar
+        asset_name: ./msd_lite_container_amd64.tar
         asset_content_type: application/zip
     
