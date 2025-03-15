@@ -1,0 +1,112 @@
+name: build
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Release
+  PROJECT_ROOT: ${{ github.workspace }}
+  BINARY_NAME: msd_lite
+  CONFIG_PATH: msd_lite/conf/msd_lite.conf
+  BINARY_PATH: src/${{ env.BINARY_NAME }}
+  ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
+  RELEASE_NAME: msd_lite-${{ github.sha }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+        include:
+          - compiler: gcc
+            cc: gcc
+            cxx: g++
+          - compiler: clang
+            cc: clang
+            cxx: clang++
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: Install libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install cmake libcunit1 libcunit1-doc libcunit1-dev
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{github.workspace}}/build
+
+    - name: Configure CMake
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DENABLE_TESTS=1
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      run: cmake --build . --config $BUILD_TYPE -j 16
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      run: ctest -C $BUILD_TYPE -j 16 --output-on-failure
+
+    # 打包二进制文件和配置文件
+    - name: Package Artifacts
+      shell: bash
+      run: |
+        # 创建 artifacts 目录
+        mkdir -p ${{ env.ARTIFACTS_DIR }}
+
+        # 复制二进制文件和配置文件到 artifacts 目录
+        cp ${{ env.PROJECT_ROOT }}/${{ env.BINARY_PATH }} ${{ env.ARTIFACTS_DIR }}/${{ env.BINARY_NAME }}
+        cp ${{ env.PROJECT_ROOT }}/${{ env.CONFIG_PATH }} ${{ env.ARTIFACTS_DIR }}/${{ env.BINARY_NAME }}.conf
+
+        # 打包成 zip 文件
+        cd ${{ env.ARTIFACTS_DIR }}
+        zip -r ${{ env.RELEASE_NAME }}.zip ${{ env.BINARY_NAME }} ${{ env.BINARY_NAME }}.conf
+
+    # 构建 Docker 镜像
+    - name: Build Docker Image
+      run: |
+        # 准备 Dockerfile
+        cat <<EOF > Dockerfile
+        FROM ubuntu:latest
+        
+        RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
+
+        # 将二进制文件复制到 /usr/local/bin
+        COPY artifacts/${{ env.BINARY_NAME }} /usr/local/bin/
+        
+        # 将配置文件复制到 /etc
+        COPY artifacts/${{ env.BINARY_NAME }}.conf /etc/${{ env.BINARY_NAME }}.conf
+        
+        # 设置容器启动命令
+        CMD ["/usr/local/bin/${{ env.BINARY_NAME }}", "-v", "-c", "/etc/${{ env.BINARY_NAME }}.conf"]
+        EOF
+
+        # 构建镜像
+        docker build -t ${{ env.RELEASE_NAME }} .
+
+        # 保存镜像为 tar 文件
+        docker save -o ${{ env.RELEASE_NAME }}.tar ${{ env.RELEASE_NAME }}
+
+    # 上传 Release
+    - name: Upload to Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          ${{ env.ARTIFACTS_DIR }}/${{ env.RELEASE_NAME }}.zip
+          ${{ env.RELEASE_NAME }}.tar
+        name: ${{ env.RELEASE_NAME }}
+        body: |
+          ## Release Notes
+          
+          This release includes the following:
+          
+          - Binary: ${{ env.BINARY_NAME }}
+          - Configuration: ${{ env.CONFIG_PATH }}
+          - Docker Image: ${{ env.RELEASE_NAME }}
