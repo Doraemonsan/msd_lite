@@ -60,12 +60,12 @@ jobs:
         mkdir -p ${{ env.ARTIFACTS_DIR }}
 
         # 复制二进制文件和配置文件到 artifacts 目录
-        cp ${{ env.PROJECT_ROOT }}/${{ env.BINARY_PATH }} ${{ env.ARTIFACTS_DIR }}
-        cp ${{ env.PROJECT_ROOT }}/${{ env.CONFIG_PATH }} ${{ env.ARTIFACTS_DIR }}
+        cp ${{ env.BINARY_PATH }} ${{ env.ARTIFACTS_DIR }}
+        cp ${{ env.CONFIG_PATH }} ${{ env.ARTIFACTS_DIR }}
 
         # 打包成 zip 文件
         cd ${{ env.ARTIFACTS_DIR }}
-        zip -r msd_lite_amd64.zip ${{ env.ARTIFACTS_DIR }}/*
+        tar -czf msd_lite_amd64.tar.gz ${{ env.ARTIFACTS_DIR }}/*
 
     # 构建 Docker 镜像
     - name: Build Docker Image
@@ -112,9 +112,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: msd_lite_amd64.zip
-        asset_name: msd_lite_amd64.zip
-        asset_content_type: application/zip
+        asset_path: msd_lite_amd64.tar.gz
+        asset_name: msd_lite_amd64.tar.gz
+        asset_content_type: application/tar
 
     - name: 上传Container包
       id: upload-container-asset
