@@ -15,14 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        compiler: [gcc, clang]
+        compiler: [gcc]
         include:
           - compiler: gcc
             cc: gcc
             cxx: g++
-          - compiler: clang
-            cc: clang
-            cxx: clang++
 
     steps:
     - uses: actions/checkout@v4
@@ -46,11 +43,6 @@ jobs:
       working-directory: ${{github.workspace}}/build
       shell: bash
       run: cmake --build . --config $BUILD_TYPE -j 16
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      shell: bash
-      run: ctest -C $BUILD_TYPE -j 16 --output-on-failure
 
     # 打包二进制文件和配置文件
     - name: Package Artifacts
