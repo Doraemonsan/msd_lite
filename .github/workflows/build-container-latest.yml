@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 env:
   BUILD_TYPE: Release
-  PROJECT_ROOT: ${{ github.workspace }}
   BINARY_PATH: src/msd_lite
   CONFIG_PATH: conf/msd_lite.conf
   ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
@@ -49,15 +48,15 @@ jobs:
       shell: bash
       run: |
         # 创建 artifacts 目录
-        mkdir -p ${{ env.ARTIFACTS_DIR }}
+        mkdir -p ${{github.workspace}}/${{ env.ARTIFACTS_DIR }}
 
         # 复制二进制文件和配置文件到 artifacts 目录
-        cp ${{ env.BINARY_PATH }} ${{ env.ARTIFACTS_DIR }}
-        cp ${{ env.CONFIG_PATH }} ${{ env.ARTIFACTS_DIR }}
+        cp ${{github.workspace}}/${{ env.BINARY_PATH }} ${{github.workspace}}/${{ env.ARTIFACTS_DIR }}
+        cp ${{github.workspace}}/${{ env.CONFIG_PATH }} ${{github.workspace}}/${{ env.ARTIFACTS_DIR }}
 
         # 打包成 zip 文件
-        cd ${{ env.ARTIFACTS_DIR }}
-        tar -czf msd_lite_amd64.tar.gz ${{ env.ARTIFACTS_DIR }}/*
+        cd ${{github.workspace}}
+        tar -czf ${{github.workspace}}/msd_lite_amd64.tar.gz ${{github.workspace}}/${{ env.ARTIFACTS_DIR }}/*
 
     # 构建 Docker 镜像
     - name: Build Docker Image
@@ -82,7 +81,7 @@ jobs:
         docker build -t ${{ env.RELEASE_NAME }} .
 
         # 保存镜像为 tar 文件
-        docker save -o msd_lite_container_amd64.tar ${{ env.RELEASE_NAME }}
+        docker save -o ${{github.workspace}}/msd_lite_container_amd64.tar ${{ env.RELEASE_NAME }}
 
     - name: 创建 Release
       id: create_release
@@ -104,7 +103,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: msd_lite_amd64.tar.gz
+        asset_path: ${{github.workspace}}/msd_lite_amd64.tar.gz
         asset_name: msd_lite_amd64.tar.gz
         asset_content_type: application/tar
 
@@ -115,7 +114,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: msd_lite_container_amd64.tar
+        asset_path: ${{github.workspace}}/msd_lite_container_amd64.tar
         asset_name: msd_lite_container_amd64.tar
         asset_content_type: application/zip
     
