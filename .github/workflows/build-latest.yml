@@ -13,10 +13,9 @@ jobs:
   # build binary
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'recursive'
-
 
       - name: Set up build environment
         run: |
@@ -37,6 +36,7 @@ jobs:
           docker save -o msd_lite_container_amd64.tar msd_lite_container_amd64 
 
       - name: Create Release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -50,11 +50,12 @@ jobs:
 
     # upload asset
       - name: Upload Release Asset
+        
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: msd_lite_amd64.tar.gz
           asset_name: msd_lite_amd64.tar.gz
           asset_content_type: application/gzip
@@ -64,7 +65,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: msd_lite_container_amd64.tar
           asset_name: msd_lite_container_amd64.tar
           asset_content_type: application/tar
