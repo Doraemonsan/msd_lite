@@ -10,33 +10,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+  # build binary
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
+        uses: actions/checkout@v3
 
-      # build binary    
-      - name: Install dependencies
+      - name: Set up build environment
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc cmake libc6-dev musl-tools musl-dev libcunit1 libcunit1-doc libcunit1-dev
+          docker run --rm -v $(pwd):/app -w /app alpine:latest sh -c "apk update && apk add --no-cache build-base cmake cunit-dev libbsd-dev musl-dev"
 
       - name: Configure CMake
         run: |
-          mkdir build
-          cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=1 -DCMAKE_C_COMPILER=/usr/bin/musl-gcc
+          docker run --rm -v $(pwd):/app -w /app alpine:latest sh -c "cmake ./ -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=1"
 
       - name: Build
         run: |
-          cd build
-          cmake --build . --config Release -j 4
+          docker run --rm -v $(pwd):/app -w /app alpine:latest sh -c "cmake --build ./ --config Release -j 4"
 
       - name: Create Release Archive
         run: |
-          mkdir release
-          sed -i "s|vlan777|eth0|g" src/msd_lite.conf
+          mkdir -p release
           cp src/msd_lite release/msd_lite
           cp conf/msd_lite.conf release/msd_lite.conf
           tar -czvf msd_lite_amd64.tar.gz -C release .
