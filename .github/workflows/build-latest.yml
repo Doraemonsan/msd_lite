@@ -25,7 +25,6 @@ jobs:
       - name: Create Release Archive
         run: |
           mkdir -p msd_lite_release
-          sed -i "s|vlan777|eth0|g" conf/msd_lite.conf
           cp src/msd_lite msd_lite_release/msd_lite
           cp conf/msd_lite.conf msd_lite_release/msd_lite.conf
           tar -czvf msd_lite_amd64.tar.gz msd_lite_release
