@@ -21,8 +21,7 @@ jobs:
       - name: Set up build environment
         run: |
           docker run --rm -v $(pwd):/app -w /app alpine:latest sh -c "apk update && apk add --no-cache build-base cmake cunit-dev libbsd-dev musl-dev" && \
-          sh -c "cmake ./ -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=1" && \
-          sh -c "cmake --build ./ --config Release -j 4"
+          sh -c "cmake ./ -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=1 -DCUNIT_INCLUDE_DIR=/usr/include/CUnit -DCUNIT_LIBRARY=/usr/lib/libcunit.so && cmake --build ./ --config Release -j 4"
 
       - name: Create Release Archive
         run: |
