@@ -1,3 +1,7 @@
+## 此分支修改了什么？
+* 更改了，对于外部访问会返回403的逻辑，取消了非本地网络的检测
+* 添加了二进制文件和Container镜像的发布
+
 # msd_lite
 
 [![Build-macOS-latest Actions Status](https://github.com/rozhuk-im/msd_lite/workflows/build-macos-latest/badge.svg)](https://github.com/rozhuk-im/msd_lite/actions)
