@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc cmake libc6-dev musl-tools musl-dev libcunit1-dev
+          sudo apt-get install -y gcc cmake libc6-dev musl-tools musl-dev libcunit1 libcunit1-doc libcunit1-dev
 
       - name: Configure CMake
         run: |
