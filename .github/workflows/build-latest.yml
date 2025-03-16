@@ -20,11 +20,12 @@ jobs:
       - name: Set up build environment
         run: |
           docker run --rm -v $(pwd):/app -w /app alpine:latest sh -c "apk update && apk add --no-cache build-base cmake cunit-dev libbsd-dev musl-dev && \
-          cmake ./ -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=1 -DCMAKE_INCLUDE_PATH=/usr/include && cmake --build ./ --config Release"
+          cmake ./ -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=1 -DCMAKE_INCLUDE_PATH=/usr/include && cmake --build ./ --config Release" 
           
       - name: Create Release Archive
         run: |
           mkdir -p release
+          sed -i "s|vlan777|eth0|g" conf/msd_lite.conf
           cp src/msd_lite release/msd_lite
           cp conf/msd_lite.conf release/msd_lite.conf
           tar -czvf msd_lite_amd64.tar.gz -C release .
