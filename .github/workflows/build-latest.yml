@@ -24,17 +24,17 @@ jobs:
           
       - name: Create Release Archive
         run: |
-          mkdir -p release
+          mkdir -p msd_lite_release
           sed -i "s|vlan777|eth0|g" conf/msd_lite.conf
-          cp src/msd_lite release/msd_lite
-          cp conf/msd_lite.conf release/msd_lite.conf
-          tar -czvf msd_lite_amd64.tar.gz -C release .
+          cp src/msd_lite msd_lite_release/msd_lite
+          cp conf/msd_lite.conf msd_lite_release/msd_lite.conf
+          tar -czvf msd_lite_amd64.tar.gz msd_lite_release
 
     # build container
       - name: Build Container
         run: |
-          docker build -t msd_lite_container_amd64 .
-          docker save -o msd_lite_container_amd64.tar msd_lite_container_amd64 
+          docker build -t msd_lite:latest .
+          docker save -o msd_lite_container_amd64.tar msd_lite:latest
 
       - name: Create Release
         id: create_release
