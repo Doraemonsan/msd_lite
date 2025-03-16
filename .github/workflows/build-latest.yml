@@ -1,0 +1,79 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # build binary    
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc cmake libcunit1-dev
+  
+      - name: Build with musl
+        run: |
+          docker run --rm -v $(pwd):/app -w /app alpine/git git clone https://github.com/richfelker/musl-cross-make.git
+          cd musl-cross-make
+          make install
+          export PATH="$PATH:/usr/local/musl/bin"
+          cd /app
+          CC="musl-gcc" CXX="musl-g++" cmake ./ -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=1
+          CC="musl-gcc" CXX="musl-g++" cmake --build ./ --config Release -j 4
+
+      - name: Create release archive
+        run: |
+          mkdir -p release
+          cp src/msd_lite release/msd_lite
+          cp conf/msd_lite.conf release/msd_lite.conf
+          tar -czvf msd_lite_amd64.tar.gz -C release .
+
+     # build container
+      - name: Build Docker image
+        run: |
+          docker build -t msd_lite_container_amd64 .
+          docker save -o msd_lite_container_amd64.tar msd_lite_container_amd64
+
+     # create release
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v1.11.0
+          release_name: Release v1.11.0
+          body: |
+            自动构建包，仅AMD64
+          draft: false
+          prerelease: false
+
+      # upload release
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./msd_lite_amd64.tar.gz
+          asset_name: msd_lite_amd64.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload container assets
+        id: upload-front-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./msd_lite_container_amd64.tar
+          asset_name: msd_lite_container_amd64.tar
+          asset_content_type: application/gzip
