@@ -12,17 +12,14 @@ COPY . .
 
 # 构建项目
 RUN cmake ./ -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=1
-RUN cmake --build ./ --config Release -j 4
-RUN ctest -C Release --output-on-failure -j 4
+RUN cmake --build ./ --config Release
+RUN ctest -C Release --output-on-failure
 
 # 更改配置文件
 RUN sed -i "s|vlan777|eth0|g" /app/conf/msd_lite.conf
 
 # 第二阶段：运行阶段
 FROM alpine:latest
-
-# 工作目录
-WORKDIR /root
 
 # 从构建阶段复制可执行文件和配置文件
 COPY --from=builder /app/src/msd_lite /usr/local/bin/msd_lite
