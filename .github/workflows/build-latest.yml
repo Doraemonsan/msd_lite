@@ -20,8 +20,8 @@ jobs:
       - name: Set up build environment
         run: |
           docker run --rm -v $(pwd):/app -w /app alpine:latest sh -c "apk update && apk add --no-cache build-base cmake cunit-dev libbsd-dev musl-dev && \
-          cmake ./ -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=1 -DCMAKE_INCLUDE_PATH=/usr/include && cmake --build ./ --config Release" 
-          
+          cmake ./ -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=1 -DCMAKE_INCLUDE_PATH=/usr/include && cmake --build ./ --config Release && ctest -C Release --output-on-failure"
+
       - name: Create Release Archive
         run: |
           mkdir -p msd_lite_release
@@ -50,7 +50,7 @@ jobs:
 
     # upload asset
       - name: Upload Release Asset
-        
+
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
